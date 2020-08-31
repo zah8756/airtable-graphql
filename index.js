@@ -8,45 +8,7 @@ const fetch = require('node-fetch');
 const e = require("express");
 // const { resolve } = require("path");
 
-const savedTLEmptyStruct = `{"people":[], "toys": [], "companies ": [], "date":""}`;
-
-// these three promises were how i was trying to spilt the array so it would posibly take less time to query 
-
-// const promise1 =  fetch("http://localhost:4000/",{
-//   method:'POST',
-//   headers:{
-//     'Content-Type': 'application/json'
-//   },
-//   body:JSON.stringify({
-//     "operationName":null,
-//     "variables":{},
-//     "query":"{\n people{id\n    end\n\    name\n    visible\n    media\n   start\n  description\n  __typename\n \n toys{id\n name\n} \n companies{id\n name\n} }\n}\n",
-//   })
-// })
-
-// const promise2 = fetch("http://localhost:4000/",{
-//   method:'POST',
-//   headers:{
-//     'Content-Type': 'application/json'
-//   },
-//   body:JSON.stringify({
-//     "operationName":null,
-//     "variables":{},
-//     "query":"{\n toys{id\n    end\n\    name\n    visible\n    media\n   start\n  description\n  __typename\n \n companies{id\n name\n} \n people{id\n name\n} }\n}\n",
-//   })
-// })
-
-// const promise3 = fetch("http://localhost:4000/",{
-//   method:'POST',
-//   headers:{
-//     'Content-Type': 'application/json'
-//   },
-//   body:JSON.stringify({
-//     "operationName":null,
-//     "variables":{},
-//     "query":"{\n companies{id\n    end\n\    name\n   media\n   start\n  description\n  __typename\n  \n toys{id\n name\n} \n people{id\n name\n} }\n}\n",
-//   })
-// })
+const savedTLEmptyStruct = `{"people": [], "toys": [], "companies": [], "date": ""}`;
 
 
 class AirtableGraphQL {
@@ -81,7 +43,7 @@ class AirtableGraphQL {
           "operationName":null,
           "variables":{},
           //this is the long query code that takes forever to load currently 
-          "query":"{\n people{id\n    end\n\    name\n    visible\n    media\n   start\n  description\n  __typename\n \n toys{id\n name\n} \n companies{id\n name\n} },\n toys{id\n    end\n\    name\n    visible\n    media\n   start\n  description\n  __typename\n \n companies{id\n name\n} \n people{id\n name\n} },\n companies{id\n    end\n\    name\n   media\n   start\n  description\n  __typename\n  \n toys{id\n name\n} \n people{id\n name\n} }\n}\n",
+          "query":"{\n people{id\n    end\n\    name\n    visible\n    media\n   start\n  description\n  __typename\n \n toys{id\n name\n visible\n} \n companies{id\n name\n visible\n} },\n toys{id\n    end\n\    name\n    visible\n    media\n   start\n  description\n  __typename\n \n companies{id\n name\n visible\n} \n people{id\n name\n visible\n} },\n companies{id\n visible\n  end\n\   name\n   media\n   start\n  description\n  __typename\n  \n toys{id\n name\n visible\n} \n people{id\n name\n visible\n} }\n}\n",
 
         })
       })
@@ -134,6 +96,7 @@ class AirtableGraphQL {
         {requestDidStart({request}){
         return {
             willSendResponse({response}) {
+              console.dir("active-1")
               //parse/save response here - if here, means there was a query, no cache
               let oldResponse = {
                 "people": [],
@@ -154,10 +117,14 @@ class AirtableGraphQL {
               if (response.data.companies !== undefined) {
                 dataCompanies = response.data.companies;
               }
+              
+              function visibleFilter(value){
+                return value.visible == true
+              }
 
               for (let i = 0; i < dataPeople.length; i++) {
                 //timeline people data
-
+                
                 oldResponse.people.push({
                   "text": {
                     "headline": "",
@@ -180,6 +147,7 @@ class AirtableGraphQL {
                   "companies": {
                     "cLinker": []
                   },
+                  "visible":""
                 });
 
                 oldResponse.people[i].text.headline = dataPeople[i].name;
@@ -195,23 +163,36 @@ class AirtableGraphQL {
 
                 oldResponse.people[i].unique_id = dataPeople[i].id;
                 oldResponse.people[i].media.url = dataPeople[i].media;
-                if (dataPeople[i].toys.length <= 0) {
+                // console.dir("people:"+dataPeople[i].toys.length);
+
+                if (!Array.isArray(dataPeople[i].toys) ||!dataPeople[i].toys.length) {
                   oldResponse.people[i].toys = undefined;
                 } else {
                   for (let t = 0; t < dataPeople[i].toys.length; t++) {
+                    // let scrubToys = dataPeople[i].toys[t].filter(visibleFilter);
+                    // oldResponse.people[i].toys.tLinker.push(scrubToys[t].name);
+                    if(dataPeople[i].toys[t].visible){
                     oldResponse.people[i].toys.tLinker.push(dataPeople[i].toys[t].name);
+                    }
                   }
                 }
 
-                if (dataPeople[i].companies.length <= 0) {
+                if (!Array.isArray(dataPeople[i].companies) ||!dataPeople[i].companies.length) {
                   oldResponse.people[i].companies = undefined;
                 } else {
                   for (let t = 0; t < dataPeople[i].companies.length; t++) {
-                    oldResponse.people[i].companies.cLinker.push(dataPeople[i].companies[t].name);
+                    // let scrubCompanies = dataPeople[i].companies.filter(visibleFilter);
+                    // oldResponse.people[i].companies.cLinker.push(scrubCompanies.companies[t]);
+                    if(dataPeople[i].companies[t].visible){
+                      oldResponse.people[i].companies.cLinker.push(dataPeople[i].companies[t].name);
+                    }
+                    // oldResponse.people[i].text.text = '<p>'+ dataPeople[i].description +'</p>' +'<span onClick="clickHappened(\'' + dataPeople[i].companies[t].id .name + '\')" />' +  dataPeople[i].companies[t].name + '</span>'
                   }
                 }
+                oldResponse.people[i].visible = dataPeople[i].visible;
               }
-
+              console.dir("finished people");
+              
               for (let x = 0; x < dataToys.length; x++) {
                 //timeline toys data
                 oldResponse.toys.push({
@@ -229,8 +210,6 @@ class AirtableGraphQL {
                   "group": "toys",
                   "media": {
                     "url": "",
-                    "caption": "",
-                    "credit": "",
                   },
                   "people": {
                     "pLinker": []
@@ -238,9 +217,10 @@ class AirtableGraphQL {
                   "companies": {
                     "cLinker": []
                   },
+                  "visible":"",
 
                 });
-
+                
                 oldResponse.toys[x].text.headline = dataToys[x].name;
                 oldResponse.toys[x].text.text = dataToys[x].description;
 
@@ -265,27 +245,32 @@ class AirtableGraphQL {
 
                 oldResponse.toys[x].unique_id = dataToys[x].id;
 
-                if (dataToys[x].people.length <= 0) {
+                if (!Array.isArray(dataToys[x].people) || !dataToys[x].people.length) {
                   oldResponse.toys[x].people = undefined;
                 } else {
                   for (let t = 0; t < dataToys[x].people.length; t++) {
-                    oldResponse.toys[x].people.pLinker.push(dataToys[x].people[t].name);
+                    if(dataToys[x].people[t].visible){
+                      oldResponse.toys[x].people.pLinker.push(dataToys[x].people[t].name);
+                    }
                   }
                 }
 
-                if (dataToys[x].companies.length <= 0) {
+                if (!Array.isArray(dataToys[x].companies) || !dataToys[x].companies.length)  {
                   oldResponse.toys[x].companies = undefined;
                 } else {
                   for (let t = 0; t < dataToys[x].companies.length; t++) {
+                    if(dataToys[x].companies[t].visible){
                     oldResponse.toys[x].companies.cLinker.push(dataToys[x].companies[t].name);
+                    }
                   }
                 }
-
-
+                oldResponse.toys[x].visible = dataToys[x].visible;
               }
+              console.dir("finished toys");
 
               for (let y = 0; y < dataCompanies.length; y++) {
                 //timeline companies data
+
                 oldResponse.companies.push({
                   "text": {
                     "headline": "",
@@ -308,10 +293,11 @@ class AirtableGraphQL {
                   "toys": {
                     "tLinker": []
                   },
-                  "companiesToName": "",
+                  // "companiesToName": "",
+                  "visible":"",
                 });
 
-                let tester = [];
+                // let tester = [];
                 oldResponse.companies[y].text.headline = dataCompanies[y].name;
 
 
@@ -336,32 +322,44 @@ class AirtableGraphQL {
 
                 oldResponse.companies[y].unique_id = dataCompanies[y].id;
 
-                if (dataCompanies[y].people.length <= 0) {
+                if (!Array.isArray(dataCompanies[y].people)||!dataCompanies[y].people.length) {
                   oldResponse.companies[y].people = undefined;
                 } else {
                   for (let t = 0; t < dataCompanies[y].people.length; t++) {
-                    oldResponse.companies[y].people.pLinker.push(dataCompanies[y].people[t].name);
+                    if(dataCompanies[y].people[t].visible){
+                      oldResponse.companies[y].people.pLinker.push(dataCompanies[y].people[t].name);
+                    }
                   }
                 }
 
 
-                if (dataCompanies[y].toys.length <= 0) {
+                if (!Array.isArray(dataCompanies[y].toys)||!dataCompanies[y].toys.length) {
                   oldResponse.companies[y].toys = undefined;
                 } else {
                   for (let t = 0; t < dataCompanies[y].toys.length; t++) {
-                    oldResponse.companies[y].toys.tLinker.push(dataCompanies[y].toys[t].name);
+                    if(dataCompanies[y].toys[t].visible){
+                      oldResponse.companies[y].toys.tLinker.push(dataCompanies[y].toys[t].name);
+                    }
                   }
-                  tester = oldResponse.companies[y].toys.tLinker;
+                  // tester = oldResponse.companies[y].toys.tLinker;
                 }
-                if (tester.length > 0) {
-                  oldResponse.companies[y].companiesToName = tester.join();
-                }
+                // if (tester.length > 0) {
+                //   oldResponse.companies[y].companiesToName = tester.join();
+                // }
 
-
-                oldResponse.companies[y].text.text = dataCompanies[y].description
-
+                oldResponse.companies[y].text.text = dataCompanies[y].description;
+                oldResponse.companies[y].visible = dataCompanies[y].visible;
               }
+              console.dir("finished companies");
 
+              //these filter out any thing that does not have the visible attribute 
+              let filteredPeople = oldResponse.people.filter(visibleFilter);
+              let filtredToys = oldResponse.toys.filter(visibleFilter);
+              let filtredCompanies = oldResponse.companies.filter(visibleFilter);
+
+              oldResponse.people = filteredPeople;
+              oldResponse.toys = filtredToys;
+              oldResponse.companies = filtredCompanies;
 
               oldResponse.date = new Date();
 
