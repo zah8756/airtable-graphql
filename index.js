@@ -151,46 +151,42 @@ class AirtableGraphQL {
                 });
 
                 oldResponse.people[i].text.headline = dataPeople[i].name;
-                oldResponse.people[i].text.text = dataPeople[i].description;
+                oldResponse.people[i].text.text = '<p>'+ dataPeople[i].description +'</p>' 
                 oldResponse.people[i].start_date.year = dataPeople[i].start;
+                oldResponse.people[i].unique_id = dataPeople[i].id;
+                oldResponse.people[i].media.url = dataPeople[i].media;
 
                 if (dataPeople[i].end == null) {
                   oldResponse.people[i].end_date = undefined;
-
                 } else {
                   oldResponse.people[i].end_date.year = dataPeople[i].end;
                 }
-
-                oldResponse.people[i].unique_id = dataPeople[i].id;
-                oldResponse.people[i].media.url = dataPeople[i].media;
-                // console.dir("people:"+dataPeople[i].toys.length);
 
                 if (!Array.isArray(dataPeople[i].toys) ||!dataPeople[i].toys.length) {
                   oldResponse.people[i].toys = undefined;
                 } else {
                   for (let t = 0; t < dataPeople[i].toys.length; t++) {
-                    // let scrubToys = dataPeople[i].toys[t].filter(visibleFilter);
-                    // oldResponse.people[i].toys.tLinker.push(scrubToys[t].name);
                     if(dataPeople[i].toys[t].visible){
                     oldResponse.people[i].toys.tLinker.push(dataPeople[i].toys[t].name);
                     }
                   }
+                  oldResponse.people[i].text.text += " <br />" + '<span>' + "Toys: "+ oldResponse.people[i].toys.tLinker.toString() + '</span>'
                 }
 
                 if (!Array.isArray(dataPeople[i].companies) ||!dataPeople[i].companies.length) {
                   oldResponse.people[i].companies = undefined;
                 } else {
                   for (let t = 0; t < dataPeople[i].companies.length; t++) {
-                    // let scrubCompanies = dataPeople[i].companies.filter(visibleFilter);
-                    // oldResponse.people[i].companies.cLinker.push(scrubCompanies.companies[t]);
                     if(dataPeople[i].companies[t].visible){
                       oldResponse.people[i].companies.cLinker.push(dataPeople[i].companies[t].name);
                     }
-                    // oldResponse.people[i].text.text = '<p>'+ dataPeople[i].description +'</p>' +'<span onClick="clickHappened(\'' + dataPeople[i].companies[t].id .name + '\')" />' +  dataPeople[i].companies[t].name + '</span>'
+                    
                   }
+                  oldResponse.people[i].text.text += " <br />" + '<span>' + "Companies: "+ oldResponse.people[i].companies.cLinker.toString() + '</span>'
                 }
                 oldResponse.people[i].visible = dataPeople[i].visible;
               }
+              
               console.dir("finished people");
               
               for (let x = 0; x < dataToys.length; x++) {
@@ -222,7 +218,7 @@ class AirtableGraphQL {
                 });
                 
                 oldResponse.toys[x].text.headline = dataToys[x].name;
-                oldResponse.toys[x].text.text = dataToys[x].description;
+                oldResponse.toys[x].text.text = '<p>'+dataToys[x].description+'</p>';
 
                 if (dataToys[x].start == null) {
                   oldResponse.toys[x].start_date.year = "1910";
@@ -253,6 +249,7 @@ class AirtableGraphQL {
                       oldResponse.toys[x].people.pLinker.push(dataToys[x].people[t].name);
                     }
                   }
+                  oldResponse.toys[x].text.text += " <br />" + '<span>' + "People: "+  oldResponse.toys[x].people.pLinker.toString() + '</span>'
                 }
 
                 if (!Array.isArray(dataToys[x].companies) || !dataToys[x].companies.length)  {
@@ -263,6 +260,7 @@ class AirtableGraphQL {
                     oldResponse.toys[x].companies.cLinker.push(dataToys[x].companies[t].name);
                     }
                   }
+                  oldResponse.toys[x].text.text += " <br />" + '<span>' + "Companies: "+  oldResponse.toys[x].companies.cLinker.toString() + '</span>'
                 }
                 oldResponse.toys[x].visible = dataToys[x].visible;
               }
@@ -299,9 +297,7 @@ class AirtableGraphQL {
 
                 // let tester = [];
                 oldResponse.companies[y].text.headline = dataCompanies[y].name;
-
-
-
+                oldResponse.companies[y].text.text = '<p>'+dataCompanies[y].description+'</p>';
                 if (dataCompanies[y].start == null) {
                   oldResponse.companies[y].start_date.year = "1910";
                 } else {
@@ -330,6 +326,7 @@ class AirtableGraphQL {
                       oldResponse.companies[y].people.pLinker.push(dataCompanies[y].people[t].name);
                     }
                   }
+                  oldResponse.companies[y].text.text += " <br />" + '<span>' + "People: "+  oldResponse.companies[y].people.pLinker.toString() + '</span>'
                 }
 
 
@@ -341,13 +338,8 @@ class AirtableGraphQL {
                       oldResponse.companies[y].toys.tLinker.push(dataCompanies[y].toys[t].name);
                     }
                   }
-                  // tester = oldResponse.companies[y].toys.tLinker;
+                  oldResponse.companies[y].text.text += " <br />" + '<span>' + "Toys: "+  oldResponse.companies[y].toys.tLinker.toString() + '</span>'
                 }
-                // if (tester.length > 0) {
-                //   oldResponse.companies[y].companiesToName = tester.join();
-                // }
-
-                oldResponse.companies[y].text.text = dataCompanies[y].description;
                 oldResponse.companies[y].visible = dataCompanies[y].visible;
               }
               console.dir("finished companies");
@@ -362,7 +354,6 @@ class AirtableGraphQL {
               oldResponse.companies = filtredCompanies;
 
               oldResponse.date = new Date();
-
 
               let savedTL = JSON.stringify(oldResponse);
               console.log("updateing cache");
